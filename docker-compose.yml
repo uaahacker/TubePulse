@@ -1,0 +1,71 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-1}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}"
+      SQLITE_PATH: /app/data/db.sqlite3
+      MEDIA_ROOT: /app/media
+      TUBEPULSE_SIMULATE_PUBLISHING: "${TUBEPULSE_SIMULATE_PUBLISHING:-1}"
+      PUBLISHING_SIMULATION_MODE: "${PUBLISHING_SIMULATION_MODE:-1}"
+    ports:
+      - "8000:8000"
+    volumes:
+      - tubepulse_data:/app/data
+      - tubepulse_media:/app/media
+      - "${YOUTUBE_CREDENTIALS_DIR:-./credentials}:/app/credentials:ro"
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    command: ["python", "manage.py", "process_scheduled_publications", "--loop", "--interval", "30"]
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-1}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}"
+      SQLITE_PATH: /app/data/db.sqlite3
+      MEDIA_ROOT: /app/media
+      TUBEPULSE_SIMULATE_PUBLISHING: "${TUBEPULSE_SIMULATE_PUBLISHING:-1}"
+      PUBLISHING_SIMULATION_MODE: "${PUBLISHING_SIMULATION_MODE:-1}"
+    volumes:
+      - tubepulse_data:/app/data
+      - tubepulse_media:/app/media
+      - "${YOUTUBE_CREDENTIALS_DIR:-./credentials}:/app/credentials:ro"
+
+  renderer:
+    build: .
+    restart: unless-stopped
+    command: ["python", "manage.py", "process_video_queue", "--loop", "--interval", "5", "--batch-size", "2"]
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-1}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}"
+      SQLITE_PATH: /app/data/db.sqlite3
+      MEDIA_ROOT: /app/media
+      TUBEPULSE_SIMULATE_PUBLISHING: "${TUBEPULSE_SIMULATE_PUBLISHING:-1}"
+      PUBLISHING_SIMULATION_MODE: "${PUBLISHING_SIMULATION_MODE:-1}"
+    volumes:
+      - tubepulse_data:/app/data
+      - tubepulse_media:/app/media
+      - "${YOUTUBE_CREDENTIALS_DIR:-./credentials}:/app/credentials:ro"
+
+volumes:
+  tubepulse_data:
+  tubepulse_media:

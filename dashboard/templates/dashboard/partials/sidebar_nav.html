@@ -1,0 +1,46 @@
+{% load dashboard_tags %}
+<div class="brand-lockup">
+  <span class="brand-mark" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+  <span>
+    <strong>TubePulse</strong>
+    <small>Creator intelligence</small>
+  </span>
+</div>
+
+<nav class="sidebar-nav" aria-label="Primary navigation">
+  <p class="nav-eyebrow">Workspace</p>
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'overview' %}active{% endif %}" href="{% url 'dashboard:overview' %}">
+    <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i><span>Overview</span>
+  </a>
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'trends' %}active{% endif %}" href="{% url 'dashboard:trends' %}">
+    <i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>Active trends</span>
+  </a>
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}" href="{% url 'dashboard:queue' %}">
+    <i class="bi bi-collection-play-fill" aria-hidden="true"></i><span>Generation queue</span>
+  </a>
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}" href="{% url 'dashboard:calendar' %}">
+    <i class="bi bi-calendar3" aria-hidden="true"></i><span>Content calendar</span>
+  </a>
+
+  <p class="nav-eyebrow mt-4">Distribution</p>
+  <a class="sidebar-link {% if request.resolver_match.namespace == 'publishing' and request.resolver_match.url_name == 'channels' %}active{% endif %}" href="{% url 'publishing:channels' %}">
+    <i class="bi bi-broadcast-pin" aria-hidden="true"></i><span>Publishing channels</span>
+  </a>
+  <a class="sidebar-link {% if request.resolver_match.url_name == 'api_keys' %}active{% endif %}" href="{% url 'dashboard:api_keys' %}">
+    <i class="bi bi-key-fill" aria-hidden="true"></i><span>Provider keys</span>
+  </a>
+</nav>
+
+<div class="sidebar-footer">
+  <div class="pulse-status">
+    <span class="status-dot"></span>
+    <span><strong>Automation ready</strong><small>Local workspace online</small></span>
+  </div>
+  <div class="sidebar-user">
+    <span class="avatar avatar-sm">{{ request.user|initials }}</span>
+    <span class="min-w-0">
+      <strong class="text-truncate d-block">{{ request.user.get_full_name|default:request.user }}</strong>
+      <small>Creator account</small>
+    </span>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+.login-shell {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(124, 58, 237, .22), transparent 34rem),
+    radial-gradient(circle at 86% 75%, rgba(45, 212, 191, .11), transparent 30rem),
+    #07090f;
+}
+
+.login-card {
+  width: min(100%, 460px);
+  background: rgba(17, 21, 34, .9);
+  border: 1px solid rgba(255, 255, 255, .08) !important;
+  border-radius: 22px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .45);
+  backdrop-filter: blur(18px);
+}
+
+.login-card .brand-mark {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -.05em;
+  background: linear-gradient(135deg, #8b5cf6, #2dd4bf);
+  border-radius: 15px;
+  box-shadow: 0 12px 30px rgba(124, 58, 237, .35);
+}

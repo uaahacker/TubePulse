@@ -1,0 +1,68 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Provider Keys{% endblock %}
+{% block page_heading %}Provider keys{% endblock %}
+{% block eyebrow %}Secure integrations{% endblock %}
+{% block page_title %}Bring the model you trust.{% endblock %}
+{% block page_description %}Connect OpenAI, Anthropic, or OpenRouter for generation, plus Pexels for free stock media. Keys are encrypted at rest and never returned to the browser.{% endblock %}
+
+{% block content %}
+<div class="settings-grid">
+  <section class="surface-card form-card">
+    <div class="card-title-row">
+      <div><p class="eyebrow mb-1">Add or replace</p><h2>Provider credential</h2></div>
+      <span class="metric-icon"><i class="bi bi-shield-lock-fill"></i></span>
+    </div>
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.provider.id_for_label }}">{{ form.provider.label }}</label>
+        <select class="form-select {% if form.provider.errors %}is-invalid{% endif %}" name="provider" id="{{ form.provider.id_for_label }}">
+          {% for value,label in form.provider.field.choices %}<option value="{{ value }}" {% if form.provider.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        {% for error in form.provider.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.api_key.id_for_label }}">{{ form.api_key.label }}</label>
+        <div class="input-group">
+          <input type="password" class="form-control {% if form.api_key.errors %}is-invalid{% endif %}" name="api_key" id="{{ form.api_key.id_for_label }}" placeholder="Paste your private API key" autocomplete="new-password" required>
+          <button class="btn btn-outline-light" type="button" data-password-toggle="{{ form.api_key.id_for_label }}" aria-label="Show API key"><i class="bi bi-eye"></i></button>
+        </div>
+        {% for error in form.api_key.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        <div class="form-text">{{ form.api_key.help_text }}</div>
+      </div>
+      <button class="btn btn-primary w-100" type="submit"><i class="bi bi-lock-fill me-2"></i>Save credential</button>
+    </form>
+    <div class="security-note"><i class="bi bi-info-circle-fill"></i><span>Replacing a provider key takes effect for new generation jobs. Existing rendered projects are unaffected.</span></div>
+  </section>
+
+  <section class="surface-card settings-card">
+    <div class="card-title-row">
+      <div><p class="eyebrow mb-1">Connected models</p><h2>Stored credentials</h2></div>
+      <span class="badge-soft">{{ api_keys|length }} configured</span>
+    </div>
+    {% if api_keys %}
+      {% for key in api_keys %}
+        <div class="provider-row">
+          <span class="provider-logo">{{ key.provider|first|upper }}</span>
+          <div class="provider-info">
+            <strong>{{ key.get_provider_display }}</strong>
+            <code>{{ key.masked_key }} · updated {{ key.updated_at|timesince }} ago</code>
+          </div>
+          <span class="status-badge {% if key.is_active %}success{% else %}secondary{% endif %}">{% if key.is_active %}Active{% else %}Inactive{% endif %}</span>
+          <form method="post" action="{% url 'dashboard:remove_api_key' key.pk %}" data-confirm="Remove this credential? New jobs using this provider will stop until another key is added.">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Remove {{ key.get_provider_display }} credential"><i class="bi bi-trash3"></i></button>
+          </form>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state py-5">
+        <span class="empty-icon"><i class="bi bi-key"></i></span>
+        <h2>No provider connected</h2>
+        <p>Add an AI credential for generation or a Pexels key for stock media.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

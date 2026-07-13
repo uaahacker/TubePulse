@@ -1,0 +1,65 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Generate video{% endblock %}
+{% block page_heading %}AI Studio{% endblock %}
+{% block eyebrow %}Generation workflow{% endblock %}
+{% block page_title %}Turn a live trend into a production brief.{% endblock %}
+{% block page_description %}Choose the trend and provider. TubePulse will create the narration and voice direction, then place the project in your render queue.{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-9">
+    <div class="card border-0 shadow-lg">
+      <div class="card-body p-4 p-lg-5">
+        <form method="post" action="{% url 'ai_studio:create_project' %}">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="trend_id">Trend</label>
+            <select class="form-select form-select-lg" id="trend_id" name="trend_id" required>
+              <option value="">Select an active trend</option>
+              {% for option in trends %}
+                <option value="{{ option.pk }}" {% if trend and trend.pk == option.pk %}selected{% endif %}>
+                  {{ option.title }} · {{ option.niche }} · score {{ option.score }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Only public trends and trends owned by your account are available.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="provider">AI provider</label>
+            <select class="form-select" id="provider" name="provider" required>
+              {% for provider in providers %}
+                <option value="{{ provider }}" {% if provider == selected_provider %}selected{% endif %}>{{ provider|title }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              The selected provider must have an active key in
+              <a href="{% url 'dashboard:api_keys' %}">API Key Settings</a>.
+            </div>
+          </div>
+
+          {% if trend %}
+            <div class="rounded-4 border bg-body-tertiary p-4 mb-4">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge text-bg-primary">{{ trend.niche }}</span>
+                <span class="badge text-bg-dark">Trend score {{ trend.score }}</span>
+              </div>
+              <h2 class="h4 mb-2">{{ trend.title }}</h2>
+              {% if trend.keywords %}<p class="text-body-secondary mb-0">Keywords: {{ trend.keywords|join:", " }}</p>{% endif %}
+            </div>
+          {% endif %}
+
+          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-end">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard:trends' %}">Back to trends</a>
+            <button class="btn btn-primary px-4" type="submit">
+              <i class="bi bi-stars me-2"></i>Generate script and voice direction
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

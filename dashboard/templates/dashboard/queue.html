@@ -1,0 +1,103 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+
+{% block title %}Generation Queue{% endblock %}
+{% block page_heading %}Generation queue{% endblock %}
+{% block eyebrow %}Production pipeline{% endblock %}
+{% block page_title %}Every idea, moving forward.{% endblock %}
+{% block page_description %}Track script generation, voiceover, asset assembly, captioning, and final render progress in one queue.{% endblock %}
+{% block page_actions %}<a class="btn btn-primary" href="{% url 'dashboard:trends' %}"><i class="bi bi-plus-lg me-2"></i>Start from a trend</a>{% endblock %}
+
+{% block content %}
+<form class="surface-card filter-bar" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-7">
+      <label class="form-label" for="id_q">Search projects</label>
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-secondary-subtle text-muted"><i class="bi bi-search"></i></span>
+        <input class="form-control" id="id_q" name="q" value="{{ request.GET.q }}" placeholder="Project or source trend…">
+      </div>
+    </div>
+    <div class="col-7 col-md-3">
+      <label class="form-label" for="id_status">Status</label>
+      <select class="form-select" id="id_status" name="status">
+        <option value="">Every stage</option>
+        {% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-5 col-md-2 d-flex gap-2">
+      <button class="btn btn-primary flex-grow-1" type="submit">Filter</button>
+      {% if request.GET %}<a class="btn btn-outline-light" href="{% url 'dashboard:queue' %}" aria-label="Clear filters"><i class="bi bi-x-lg"></i></a>{% endif %}
+    </div>
+  </div>
+</form>
+
+{% if projects %}
+  <div class="d-grid gap-2">
+    {% for project in projects %}
+      <article class="surface-card hoverable queue-card">
+        <div class="queue-card-main">
+          <div class="video-thumb">
+            {% if project.thumbnail %}<img src="{{ project.thumbnail.url }}" alt="Thumbnail for {{ project.title }}">{% else %}<i class="bi bi-play-fill"></i>{% endif %}
+          </div>
+          <div class="min-w-0">
+            <h2 class="queue-title">{{ project.title }}</h2>
+            <div class="queue-meta">
+              <span><i class="bi bi-graph-up-arrow me-1"></i>{{ project.trend.title|default:"Original concept"|truncatechars:48 }}</span>
+              <span><i class="bi bi-cpu me-1"></i>{{ project.provider|default:"Awaiting provider"|title }}</span>
+              <span><i class="bi bi-clock me-1"></i>Updated {{ project.updated_at|timesince }} ago</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2">
+              <div class="progress queue-progress flex-grow-1 mt-0"><div class="progress-bar" data-progress="{{ project.progress }}" role="progressbar" aria-label="{{ project.progress }} percent complete"></div></div>
+              <span class="text-muted small">{{ project.progress }}%</span>
+            </div>
+            {% if project.error_message %}<p class="text-danger small mt-2 mb-0"><i class="bi bi-exclamation-circle me-1"></i>{{ project.error_message|truncatechars:140 }}</p>{% endif %}
+          </div>
+          <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap">
+            <span class="status-badge {{ project.status|status_badge }}">{{ project.get_status_display }}</span>
+            {% if project.status == "ready" or project.status == "failed" %}
+              <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#render-options-{{ project.public_id }}" aria-expanded="false" aria-controls="render-options-{{ project.public_id }}">
+                <i class="bi bi-camera-reels me-1"></i>{% if project.status == "failed" %}Retry render{% else %}Queue render{% endif %}
+              </button>
+            {% endif %}
+            {% if project.video_file %}<a class="btn btn-sm btn-primary" href="{% url 'publishing:publish_project' project.pk %}"><i class="bi bi-send me-1"></i>Publish</a>{% endif %}
+          </div>
+        </div>
+        {% if project.status == "ready" or project.status == "failed" %}
+          <div class="collapse" id="render-options-{{ project.public_id }}">
+            <form class="render-options" method="post" enctype="multipart/form-data" action="{% url 'ai_studio:render_project' project.public_id %}">
+              {% csrf_token %}
+              <div class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                  <label class="form-label" for="audio-{{ project.public_id }}">Narration audio <span class="text-muted">optional</span></label>
+                  <input class="form-control form-control-sm" id="audio-{{ project.public_id }}" name="audio" type="file" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac">
+                </div>
+                <div class="col-lg-4">
+                  <label class="form-label" for="assets-{{ project.public_id }}">Background media <span class="text-muted">optional</span></label>
+                  <input class="form-control form-control-sm" id="assets-{{ project.public_id }}" name="assets" type="file" accept="image/*,video/*" multiple>
+                </div>
+                <div class="col-lg-3">
+                  <label class="form-label" for="asset-urls-{{ project.public_id }}">Public asset URLs <span class="text-muted">optional</span></label>
+                  <textarea class="form-control form-control-sm" id="asset-urls-{{ project.public_id }}" name="asset_urls" rows="2" maxlength="24000" placeholder="One URL per line"></textarea>
+                </div>
+                <div class="col-lg-1 d-grid">
+                  <button class="btn btn-sm btn-primary" type="submit">Queue</button>
+                </div>
+              </div>
+              <p class="form-text mb-0 mt-2">Leave media blank to reuse saved assets or search Pexels with your configured key. Up to 12 assets.</p>
+            </form>
+          </div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+  {% include "dashboard/partials/pagination.html" with page_obj=projects %}
+{% else %}
+  <div class="surface-card empty-state">
+    <span class="empty-icon"><i class="bi bi-collection-play"></i></span>
+    <h2>No projects found</h2>
+    <p>{% if request.GET %}Clear the filters to see the full pipeline.{% else %}Pick an active trend and TubePulse will create your first production project.{% endif %}</p>
+    <a class="btn btn-primary" href="{% url 'dashboard:trends' %}">Explore active trends</a>
+  </div>
+{% endif %}
+{% endblock %}
