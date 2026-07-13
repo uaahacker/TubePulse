@@ -1,0 +1,51 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+
+{% block title %}Publication · {{ publication.title }}{% endblock %}
+{% block page_heading %}Publication details{% endblock %}
+{% block eyebrow %}Delivery record{% endblock %}
+{% block page_title %}{{ publication.title }}{% endblock %}
+{% block page_description %}A complete audit of this Short’s destination, timing, visibility, and publishing outcome.{% endblock %}
+{% block page_actions %}<a class="btn btn-outline-light" href="{% url 'dashboard:calendar' %}"><i class="bi bi-calendar3 me-2"></i>Calendar</a>{% if publication.publication_url %}<a class="btn btn-primary" href="{{ publication.publication_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-youtube me-2"></i>Open on YouTube</a>{% endif %}{% endblock %}
+
+{% block content %}
+{% if simulation_mode and publication.youtube_video_id|slice:":4" == "sim-" %}
+  <div class="simulation-banner"><i class="bi bi-cone-striped fs-5"></i><div><strong>Simulated publishing record</strong><p>This record proves the local workflow completed; the YouTube URL is illustrative and no upload occurred.</p></div></div>
+{% endif %}
+<div class="row g-3 align-items-start">
+  <div class="col-xl-8">
+    <section class="surface-card detail-card">
+      <div class="card-title-row">
+        <div><p class="eyebrow mb-1">Current state</p><h2>Publishing outcome</h2></div>
+        <span class="status-badge {{ publication.status|status_badge }}">{{ publication.get_status_display }}</span>
+      </div>
+      {% if publication.error_message %}<div class="error-panel mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ publication.error_message }}</div>{% endif %}
+      <dl class="detail-list">
+        <div><dt>Project</dt><dd>{{ publication.project.title }}</dd></div>
+        <div><dt>Channel</dt><dd>{{ publication.channel.channel_title }} · {{ publication.channel.get_provider_display }}</dd></div>
+        <div><dt>Scheduled for</dt><dd>{{ publication.scheduled_for|date:"F j, Y \a\t H:i T" }}</dd></div>
+        <div><dt>Visibility</dt><dd>{{ publication.get_privacy_status_display }}</dd></div>
+        <div><dt>Attempts</dt><dd>{{ publication.attempt_count }}</dd></div>
+        {% if publication.next_attempt_at %}<div><dt>Next retry</dt><dd>{{ publication.next_attempt_at|date:"F j, Y \a\t H:i T" }}</dd></div>{% endif %}
+        {% if publication.published_at %}<div><dt>Published</dt><dd>{{ publication.published_at|date:"F j, Y \a\t H:i T" }}</dd></div>{% endif %}
+        {% if publication.youtube_video_id %}<div><dt>YouTube video ID</dt><dd><code>{{ publication.youtube_video_id }}</code></dd></div>{% endif %}
+        {% if publication.tags %}<div><dt>Tags</dt><dd>{{ publication.tags|join:", " }}</dd></div>{% endif %}
+      </dl>
+      {% if publication.can_cancel or publication.can_retry %}
+        <div class="divider my-3"></div>
+        <div class="d-flex justify-content-end gap-2">
+          {% if publication.can_cancel %}<form method="post" action="{% url 'publishing:cancel_publication' publication.pk %}" data-confirm="Cancel this scheduled publication?">{% csrf_token %}<button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle me-2"></i>Cancel publication</button></form>{% endif %}
+          {% if publication.can_retry %}<form method="post" action="{% url 'publishing:retry_publication' publication.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit"><i class="bi bi-arrow-repeat me-2"></i>Retry now</button></form>{% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+  <aside class="col-xl-4">
+    <section class="surface-card detail-card">
+      <p class="eyebrow mb-1">Description</p>
+      <h2 class="h6 mb-3">YouTube metadata</h2>
+      <p class="text-muted small mb-0" style="white-space:pre-line">{{ publication.description|default:"No description was supplied." }}</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

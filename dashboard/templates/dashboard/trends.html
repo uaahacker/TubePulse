@@ -1,0 +1,79 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+
+{% block title %}Active Trends{% endblock %}
+{% block page_heading %}Active trends{% endblock %}
+{% block eyebrow %}Signal intelligence{% endblock %}
+{% block page_title %}Catch the wave before it peaks.{% endblock %}
+{% block page_description %}Ranked topics from your configured niches, enriched with source context and production-ready keywords.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-outline-light" href="{% url 'trends:ingest' %}"><i class="bi bi-radar me-2"></i>Scan niches</a>
+<a class="btn btn-primary" href="{% url 'dashboard:queue' %}"><i class="bi bi-collection-play me-2"></i>Generation queue</a>
+{% endblock %}
+
+{% block content %}
+<form class="surface-card filter-bar" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-lg-5">
+      <label class="form-label" for="id_q">Search signals</label>
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-secondary-subtle text-muted"><i class="bi bi-search"></i></span>
+        <input class="form-control" id="id_q" name="q" value="{{ request.GET.q }}" placeholder="Topic, keyword, niche…">
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label" for="id_niche">Niche</label>
+      <select class="form-select" id="id_niche" name="niche">
+        <option value="">All niches</option>
+        {% for niche in niches %}<option value="{{ niche }}" {% if request.GET.niche == niche %}selected{% endif %}>{{ niche }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <label class="form-label" for="id_source">Source</label>
+      <select class="form-select" id="id_source" name="source">
+        <option value="">All sources</option>
+        {% for source in sources %}<option value="{{ source }}" {% if request.GET.source == source %}selected{% endif %}>{{ source|title }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-3 d-flex gap-2">
+      <button class="btn btn-primary flex-grow-1" type="submit">Apply filters</button>
+      {% if request.GET %}<a class="btn btn-outline-light" href="{% url 'dashboard:trends' %}" aria-label="Clear filters"><i class="bi bi-x-lg"></i></a>{% endif %}
+    </div>
+  </div>
+</form>
+
+{% if trends %}
+  <div class="row g-3">
+    {% for trend in trends %}
+      <div class="col-md-6 col-xxl-4">
+        <article class="surface-card hoverable trend-card">
+          <div class="trend-card-top">
+            <span class="source-mark"><i class="bi bi-broadcast"></i>{{ trend.source|default:"live signal" }}</span>
+            <span class="score-ring" style="--score:{{ trend.score|floatformat:0 }}" title="Virality score {{ trend.score|floatformat:0 }} out of 100">{{ trend.score|floatformat:0 }}</span>
+          </div>
+          <h2>{{ trend.title }}</h2>
+          <div class="trend-card-meta">
+            <span><i class="bi bi-grid me-1"></i>{{ trend.niche|default:"General" }}</span>
+            <span><i class="bi bi-clock me-1"></i>{{ trend.discovered_at|timesince }} ago</span>
+          </div>
+          <div class="keyword-list" aria-label="Keywords">
+            {% for keyword in trend.keywords|slice:":4" %}<span class="keyword-chip">#{{ keyword }}</span>{% empty %}<span class="keyword-chip">Topic intelligence</span>{% endfor %}
+          </div>
+          <div class="trend-actions">
+            {% if trend.source_url %}<a class="small text-decoration-none" href="{{ trend.source_url }}" target="_blank" rel="noopener noreferrer">View source <i class="bi bi-box-arrow-up-right ms-1"></i></a>{% else %}<span class="text-muted small">Source captured</span>{% endif %}
+            <a class="btn btn-sm btn-primary" href="{% url 'ai_studio:create_project' %}?trend_id={{ trend.pk }}"><i class="bi bi-stars me-1"></i>Create video</a>
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+  {% include "dashboard/partials/pagination.html" with page_obj=trends %}
+{% else %}
+  <div class="surface-card empty-state">
+    <span class="empty-icon"><i class="bi bi-radar"></i></span>
+    <h2>No signals match this view</h2>
+    <p>Try a broader filter. If the feed is empty, run trend ingestion for your configured niches.</p>
+    {% if request.GET %}<a class="btn btn-outline-light" href="{% url 'dashboard:trends' %}">Clear all filters</a>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

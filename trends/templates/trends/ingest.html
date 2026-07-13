@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Discover Trends{% endblock %}
+{% block page_heading %}Trend ingestion{% endblock %}
+{% block eyebrow %}Trend intelligence{% endblock %}
+{% block page_title %}Discover viral opportunities.{% endblock %}
+{% block page_description %}Scan free public feeds by niche and save normalized audience signals to your workspace.{% endblock %}
+{% block page_actions %}<a href="{% url 'dashboard:trends' %}" class="btn btn-outline-light">Active trends</a>{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <form method="post" class="surface-card form-card">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold" for="{{ form.niches.id_for_label }}">{{ form.niches.label }}</label>
+        {{ form.niches }}
+        <div class="form-text">{{ form.niches.help_text }}</div>
+        {% for error in form.niches.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ form.geo.id_for_label }}">{{ form.geo.label }}</label>
+          {{ form.geo }}
+          {% for error in form.geo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ form.limit_per_source.id_for_label }}">{{ form.limit_per_source.label }}</label>
+          {{ form.limit_per_source }}
+          {% for error in form.limit_per_source.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <fieldset class="mb-4">
+        <legend class="form-label fw-semibold">Public sources</legend>
+        <div class="d-flex flex-wrap gap-4">{{ form.sources }}</div>
+        {% for error in form.sources.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+      </fieldset>
+
+      <div class="form-check form-switch mb-4">
+        {{ form.dispatch_ai }}
+        <label class="form-check-label" for="{{ form.dispatch_ai.id_for_label }}">{{ form.dispatch_ai.label }}</label>
+        <div class="form-text">{{ form.dispatch_ai.help_text }}</div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 pt-3 border-top border-secondary-subtle">
+        <a href="{% url 'dashboard:trends' %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-radar me-2"></i>Run trend scan</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

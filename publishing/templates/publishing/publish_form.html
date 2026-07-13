@@ -1,0 +1,94 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Publish {{ project.title }}{% endblock %}
+{% block page_heading %}Publish video{% endblock %}
+{% block eyebrow %}Final delivery{% endblock %}
+{% block page_title %}Choose the moment it goes live.{% endblock %}
+{% block page_description %}Review the YouTube metadata, choose a connected channel, then publish immediately or reserve a place on your calendar.{% endblock %}
+
+{% block content %}
+{% if simulation_mode %}
+  <div class="simulation-banner" role="status"><i class="bi bi-cone-striped fs-5"></i><div><strong>This is a simulated publication</strong><p>The complete flow will run locally, but no video will be uploaded to YouTube.</p></div></div>
+{% endif %}
+
+<div class="row g-3 align-items-start">
+  <div class="col-xl-8">
+    <section class="surface-card form-card">
+      {% if not has_channels %}
+        <div class="simulation-banner mb-3"><i class="bi bi-broadcast-pin fs-5"></i><div><strong>Connect a channel first</strong><p>You need one active destination before this video can be published.</p></div></div>
+      {% endif %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <fieldset class="mb-4">
+          <legend class="form-label mb-2">Delivery timing</legend>
+          <div class="row g-2 mode-cards">
+            {% for radio in form.mode %}
+              <div class="col-sm-6"><div class="form-check">{{ radio.tag }}<label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}<br><small class="text-muted">{% if radio.data.value == 'now' %}Upload as soon as you confirm.{% else %}Hold it for a future calendar slot.{% endif %}</small></label></div></div>
+            {% endfor %}
+          </div>
+          {% for error in form.mode.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </fieldset>
+
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.channel.id_for_label }}">Publishing channel</label>
+          <select class="form-select {% if form.channel.errors %}is-invalid{% endif %}" id="{{ form.channel.id_for_label }}" name="channel" required {% if not has_channels %}disabled{% endif %}>
+            <option value="">Choose a channel</option>
+            {% for channel in form.channel.field.queryset %}<option value="{{ channel.pk }}" {% if form.channel.value|stringformat:'s' == channel.pk|stringformat:'s' %}selected{% endif %}>{{ channel.channel_title }} · {{ channel.get_provider_display }}</option>{% endfor %}
+          </select>
+          {% for error in form.channel.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="mb-3" data-schedule-fields>
+          <label class="form-label" for="{{ form.scheduled_for.id_for_label }}">Scheduled time</label>
+          <input class="form-control {% if form.scheduled_for.errors %}is-invalid{% endif %}" type="datetime-local" id="{{ form.scheduled_for.id_for_label }}" name="scheduled_for" value="{{ form.scheduled_for.value|default:'' }}">
+          {% for error in form.scheduled_for.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+          <div class="form-text">Times use the TubePulse server timezone.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.title.id_for_label }}">YouTube title</label>
+          <input class="form-control {% if form.title.errors %}is-invalid{% endif %}" id="{{ form.title.id_for_label }}" name="title" maxlength="100" value="{{ form.title.value|default:'' }}" required>
+          {% for error in form.title.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+          <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}" id="{{ form.description.id_for_label }}" name="description" maxlength="5000" rows="5" placeholder="Tell viewers what this Short delivers…">{{ form.description.value|default:'' }}</textarea>
+          {% for error in form.description.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="row g-3">
+          <div class="col-md-7">
+            <label class="form-label" for="id_tags_text">Tags</label>
+            <input class="form-control {% if form.tags_text.errors %}is-invalid{% endif %}" id="id_tags_text" name="tags_text" value="{{ form.tags_text.value|default:'' }}" placeholder="shorts, creator tips, trending">
+            {% for error in form.tags_text.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" for="{{ form.privacy_status.id_for_label }}">Visibility</label>
+            <select class="form-select {% if form.privacy_status.errors %}is-invalid{% endif %}" id="{{ form.privacy_status.id_for_label }}" name="privacy_status">
+              {% for value,label in form.privacy_status.field.choices %}<option value="{{ value }}" {% if form.privacy_status.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="divider my-4"></div>
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <a class="btn btn-outline-light" href="{% url 'dashboard:queue' %}">Back to queue</a>
+          <button class="btn btn-primary px-4" type="submit" {% if not has_channels %}disabled{% endif %}><i class="bi bi-send-check-fill me-2"></i>Confirm publication</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <aside class="col-xl-4">
+    <section class="surface-card detail-card">
+      <div class="card-title-row"><div><p class="eyebrow mb-1">Selected project</p><h2>{{ project.title }}</h2></div><span class="metric-icon"><i class="bi bi-phone-fill"></i></span></div>
+      <dl class="detail-list">
+        <div><dt>Status</dt><dd>{{ project.get_status_display }}</dd></div>
+        <div><dt>Source trend</dt><dd>{{ project.trend.title|default:"Original concept" }}</dd></div>
+        <div><dt>AI provider</dt><dd>{{ project.provider|default:"Not recorded"|title }}</dd></div>
+        <div><dt>Render</dt><dd>{% if project.video_file %}<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Video ready</span>{% else %}<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Awaiting render</span>{% endif %}</dd></div>
+      </dl>
+      {% if not project.video_file %}<div class="error-panel mt-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>A rendered MP4 is required before an upload can succeed.</div>{% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

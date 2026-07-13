@@ -1,0 +1,157 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+
+{% block title %}Overview{% endblock %}
+{% block page_heading %}Overview{% endblock %}
+{% block eyebrow %}Daily pulse{% endblock %}
+{% block page_title %}Create at the speed of culture.{% endblock %}
+{% block page_description %}Spot rising conversations, move the strongest ideas into production, and publish on schedule from one focused workspace.{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-light" href="{% url 'publishing:channels' %}"><i class="bi bi-broadcast-pin me-2"></i>Channels</a>
+  <a class="btn btn-primary" href="{% url 'dashboard:trends' %}"><i class="bi bi-stars me-2"></i>Explore trends</a>
+{% endblock %}
+
+{% block content %}
+<section class="surface-card hero-panel">
+  <div class="hero-copy">
+    <p class="eyebrow mb-2">Your production flywheel</p>
+    <h2>From live signal to vertical story, without the busywork.</h2>
+    <p>TubePulse ranks active trends, builds scripts and voiceovers, assembles 9:16 video, then keeps every Short moving toward the right channel and time.</p>
+    <div class="hero-pills" aria-label="Automation stages">
+      <span class="hero-pill"><i class="bi bi-radar"></i>Trend intelligence</span>
+      <span class="hero-pill"><i class="bi bi-magic"></i>AI scripting</span>
+      <span class="hero-pill"><i class="bi bi-badge-cc-fill"></i>Auto captions</span>
+      <span class="hero-pill"><i class="bi bi-send-check-fill"></i>Scheduled publishing</span>
+    </div>
+    <a class="btn btn-primary px-3" href="{% url 'dashboard:trends' %}">Find the next idea <i class="bi bi-arrow-right ms-2"></i></a>
+  </div>
+</section>
+
+<section class="row g-3 mt-1" aria-label="Workspace metrics">
+  <div class="col-6 col-lg-3">
+    <div class="surface-card metric-card">
+      <div class="metric-head"><span>Active signals</span><span class="metric-icon"><i class="bi bi-graph-up-arrow"></i></span></div>
+      <div class="metric-value">{{ active_trend_count }}</div>
+      <div class="metric-foot">Ranked trends ready to use</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="surface-card metric-card">
+      <div class="metric-head"><span>In production</span><span class="metric-icon"><i class="bi bi-lightning-charge-fill"></i></span></div>
+      <div class="metric-value">{{ queue_count }}</div>
+      <div class="metric-foot">Scripts, audio, and renders</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="surface-card metric-card">
+      <div class="metric-head"><span>Ready to ship</span><span class="metric-icon"><i class="bi bi-check2-circle"></i></span></div>
+      <div class="metric-value">{{ ready_count }}</div>
+      <div class="metric-foot">Finished vertical videos</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="surface-card metric-card">
+      <div class="metric-head"><span>Scheduled</span><span class="metric-icon"><i class="bi bi-calendar2-check"></i></span></div>
+      <div class="metric-value">{{ scheduled_count }}</div>
+      <div class="metric-foot">Across {{ connected_channel_count }} connected channel{{ connected_channel_count|pluralize }}</div>
+    </div>
+  </div>
+</section>
+
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="section-heading">
+      <h2>Signals gaining momentum</h2>
+      <a href="{% url 'dashboard:trends' %}">View all <i class="bi bi-arrow-right-short"></i></a>
+    </div>
+    <div class="surface-card data-card">
+      {% if recent_trends %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Trend</th><th>Niche</th><th>Pulse</th><th></th></tr></thead>
+            <tbody>
+            {% for trend in recent_trends %}
+              <tr>
+                <td>
+                  <span class="table-title">{{ trend.title }}</span>
+                  <span class="table-subtitle">{{ trend.source }} · {{ trend.discovered_at|timesince }} ago</span>
+                </td>
+                <td><span class="badge-soft">{{ trend.niche|default:"General" }}</span></td>
+                <td><strong>{{ trend.score|floatformat:0 }}</strong><span class="text-muted"> / 100</span></td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-light" href="{% url 'ai_studio:create_project' %}?trend_id={{ trend.pk }}">Use signal</a>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state py-5">
+          <span class="empty-icon"><i class="bi bi-radar"></i></span>
+          <h2>No active signals yet</h2>
+          <p>Run trend ingestion to populate your live opportunity feed.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="section-heading">
+      <h2>Next on the calendar</h2>
+      <a href="{% url 'dashboard:calendar' %}">Open calendar <i class="bi bi-arrow-right-short"></i></a>
+    </div>
+    <div class="surface-card settings-card h-auto">
+      {% if upcoming_publications %}
+        {% for publication in upcoming_publications %}
+          <a class="provider-row text-decoration-none" href="{{ publication.get_absolute_url }}">
+            <span class="provider-logo"><i class="bi bi-youtube text-danger"></i></span>
+            <span class="provider-info">
+              <strong class="text-light text-truncate">{{ publication.title }}</strong>
+              <code>{{ publication.channel.channel_title }} · {{ publication.scheduled_for|date:"M j, H:i" }}</code>
+            </span>
+            <span class="status-badge {{ publication.status|status_badge }}">{{ publication.get_status_display }}</span>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state py-5">
+          <span class="empty-icon"><i class="bi bi-calendar2-plus"></i></span>
+          <h2>Your calendar is clear</h2>
+          <p>Finished videos can be published now or scheduled to any connected channel.</p>
+          <a class="btn btn-sm btn-outline-light" href="{% url 'dashboard:queue' %}">Open queue</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="section-heading">
+  <h2>Recent production activity</h2>
+  <a href="{% url 'dashboard:queue' %}">View queue <i class="bi bi-arrow-right-short"></i></a>
+</div>
+<div class="surface-card data-card">
+  {% if recent_projects %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>Project</th><th>Provider</th><th>Progress</th><th>Status</th><th>Updated</th></tr></thead>
+        <tbody>
+          {% for project in recent_projects %}
+            <tr>
+              <td><span class="table-title">{{ project.title }}</span><span class="table-subtitle">{{ project.trend.title|default:"Original concept" }}</span></td>
+              <td>{{ project.provider|default:"—"|title }}</td>
+              <td style="min-width:140px">
+                <div class="d-flex justify-content-between small mb-1"><span class="text-muted">Pipeline</span><span>{{ project.progress }}%</span></div>
+                <div class="progress queue-progress mt-0"><div class="progress-bar" data-progress="{{ project.progress }}" role="progressbar" aria-label="{{ project.progress }} percent complete"></div></div>
+              </td>
+              <td><span class="status-badge {{ project.status|status_badge }}">{{ project.get_status_display }}</span></td>
+              <td class="text-muted">{{ project.updated_at|timesince }} ago</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state py-5"><span class="empty-icon"><i class="bi bi-collection-play"></i></span><h2>No projects in production</h2><p>Choose a ranked trend to begin your first automated Short.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

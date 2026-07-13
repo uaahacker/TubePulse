@@ -1,0 +1,75 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Publishing Channels{% endblock %}
+{% block page_heading %}Publishing channels{% endblock %}
+{% block eyebrow %}Channel connections{% endblock %}
+{% block page_title %}Ship to the audience you own.{% endblock %}
+{% block page_description %}Securely connect YouTube channels, manage authorization, and route every finished Short to the right destination.{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-primary {% if not simulation_mode and not oauth_configured %}disabled{% endif %}" href="{% url 'publishing:youtube_connect' %}" {% if not simulation_mode and not oauth_configured %}aria-disabled="true" title="Configure Google OAuth first"{% endif %}><i class="bi bi-youtube me-2"></i>{% if simulation_mode %}Connect sandbox{% else %}Connect YouTube{% endif %}</a>
+{% endblock %}
+
+{% block content %}
+{% if simulation_mode %}
+  <div class="simulation-banner" role="status">
+    <i class="bi bi-cone-striped fs-5"></i>
+    <div><strong>Simulation mode is active</strong><p>Channel connections and uploads are recorded locally. No content or credentials are sent to YouTube.</p></div>
+  </div>
+{% elif not oauth_configured %}
+  <div class="simulation-banner" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div><strong>Google OAuth configuration is required</strong><p>Add your OAuth client ID and secret to the environment, restart TubePulse, then connect a YouTube channel.</p></div>
+  </div>
+{% endif %}
+
+{% if channels %}
+  <div class="row g-3">
+    {% for channel in channels %}
+      <div class="col-md-6 col-xxl-4">
+        <article class="surface-card channel-card {% if not channel.is_active %}opacity-75{% endif %}">
+          <div class="channel-head">
+            {% if channel.channel_thumbnail_url %}<img class="avatar avatar-channel" src="{{ channel.channel_thumbnail_url }}" alt="{{ channel.channel_title }} channel image" referrerpolicy="no-referrer">{% else %}<span class="avatar avatar-channel"><i class="bi bi-youtube text-danger"></i></span>{% endif %}
+            <div class="min-w-0 flex-grow-1">
+              <h2 class="text-truncate">{{ channel.channel_title }}</h2>
+              <p>YouTube · {{ channel.channel_id|truncatechars:24 }}</p>
+            </div>
+            <span class="status-badge {% if channel.is_active %}success{% else %}secondary{% endif %}">{% if channel.is_active %}Connected{% else %}Disconnected{% endif %}</span>
+          </div>
+          <div class="channel-meta">
+            <div><small>Connected</small><strong>{{ channel.last_connected_at|date:"M j, Y" }}</strong></div>
+            <div><small>Publications</small><strong>{{ channel.publications.count }}</strong></div>
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            {% if channel.is_active %}
+              <form method="post" action="{% url 'publishing:disconnect_channel' channel.pk %}" data-confirm="Disconnect {{ channel.channel_title }}? Any pending publications for this channel will be cancelled.">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-link-45deg me-1"></i>Disconnect</button>
+              </form>
+            {% else %}
+              <a class="btn btn-sm btn-outline-light" href="{% url 'publishing:youtube_connect' %}"><i class="bi bi-arrow-repeat me-1"></i>Reconnect</a>
+            {% endif %}
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="surface-card empty-state">
+    <span class="empty-icon"><i class="bi bi-broadcast-pin"></i></span>
+    <h2>No publishing channel connected</h2>
+    <p>{% if simulation_mode %}Connect the local sandbox to test your complete scheduling flow without making a network request.{% else %}Authorize your YouTube channel with OAuth. TubePulse requests only the access needed to identify your channel and upload video.{% endif %}</p>
+    {% if simulation_mode or oauth_configured %}<a class="btn btn-primary" href="{% url 'publishing:youtube_connect' %}"><i class="bi bi-youtube me-2"></i>{% if simulation_mode %}Connect sandbox{% else %}Connect YouTube{% endif %}</a>{% endif %}
+  </div>
+{% endif %}
+
+<section class="surface-card settings-card mt-3">
+  <div class="row align-items-center g-3">
+    <div class="col-lg-8">
+      <p class="eyebrow mb-1">Privacy by design</p>
+      <h2 class="h6 mb-2">OAuth tokens stay encrypted inside your CRM.</h2>
+      <p class="text-muted small mb-0">TubePulse refreshes short-lived access automatically, never exposes credentials in the dashboard, and clears local authorization when you disconnect.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end"><a class="btn btn-sm btn-outline-light" href="{% url 'dashboard:calendar' %}"><i class="bi bi-calendar3 me-2"></i>Open content calendar</a></div>
+  </div>
+</section>
+{% endblock %}

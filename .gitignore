@@ -1,0 +1,17 @@
+.env
+.agents/
+.codex/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+.coverage
+.pytest_cache/
+.ruff_cache/
+media/
+staticfiles/
+data/
+credentials/
+*.log
+.DS_Store

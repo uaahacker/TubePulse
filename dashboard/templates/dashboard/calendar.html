@@ -1,0 +1,40 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Content Calendar{% endblock %}
+{% block page_heading %}Content calendar{% endblock %}
+{% block eyebrow %}Publishing cadence{% endblock %}
+{% block page_title %}Make consistency feel effortless.{% endblock %}
+{% block page_description %}See every scheduled Short at a glance and protect the publishing rhythm that grows your audience.{% endblock %}
+{% block page_actions %}<a class="btn btn-outline-light" href="{% url 'publishing:channels' %}"><i class="bi bi-broadcast-pin me-2"></i>Manage channels</a><a class="btn btn-primary" href="{% url 'dashboard:queue' %}"><i class="bi bi-plus-lg me-2"></i>Schedule a video</a>{% endblock %}
+
+{% block content %}
+<section class="surface-card">
+  <div class="calendar-toolbar">
+    <a class="btn btn-sm btn-outline-light" href="?year={{ previous_year }}&amp;month={{ previous_month }}" aria-label="Previous month"><i class="bi bi-chevron-left"></i></a>
+    <h2>{{ month_label }}</h2>
+    <a class="btn btn-sm btn-outline-light" href="?year={{ next_year }}&amp;month={{ next_month }}" aria-label="Next month"><i class="bi bi-chevron-right"></i></a>
+  </div>
+  <div class="calendar-scroll">
+    <div class="calendar-grid" role="grid" aria-label="{{ month_label }} content calendar">
+      <div class="weekday" role="columnheader">Mon</div><div class="weekday" role="columnheader">Tue</div><div class="weekday" role="columnheader">Wed</div><div class="weekday" role="columnheader">Thu</div><div class="weekday" role="columnheader">Fri</div><div class="weekday" role="columnheader">Sat</div><div class="weekday" role="columnheader">Sun</div>
+      {% for week in calendar_weeks %}
+        {% for day in week %}
+          <div class="calendar-day {% if not day.in_month %}outside{% endif %} {% if day.is_today %}today{% endif %}" role="gridcell" aria-label="{{ day.date|date:'F j, Y' }}">
+            <span class="day-number">{{ day.date.day }}</span>
+            {% for event in day.events %}
+              <a class="calendar-event {{ event.status }}" href="{{ event.get_absolute_url }}" title="{{ event.title }} · {{ event.scheduled_for|date:'H:i' }} · {{ event.get_status_display }}">
+                {{ event.scheduled_for|date:"H:i" }} · {{ event.title }}
+              </a>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<div class="d-flex flex-wrap gap-3 mt-3 text-muted small">
+  <span><i class="bi bi-circle-fill text-primary me-1"></i>Scheduled</span>
+  <span><i class="bi bi-circle-fill text-success me-1"></i>Published</span>
+  <span><i class="bi bi-circle-fill text-danger me-1"></i>Failed or cancelled</span>
+</div>
+{% endblock %}
